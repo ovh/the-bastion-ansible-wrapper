@@ -1,0 +1,21 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: fix-encoding-pragma
+        args: ['--remove']
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/FalconSocial/pre-commit-python-sorter
+    rev: master
+    hooks:
+      - id: python-import-sorter
+        args: ['--silent-overwrite']
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
