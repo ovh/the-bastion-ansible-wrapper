@@ -48,6 +48,37 @@ group_vars/zone_secure.yml:bastion_host: <your-supersecure-bastion>
 
 For more information have a look at [the official documentation](https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html)
 
+## Using env vars from a playbook
+
+In some cases, like the usage of multiple bastions for a single ansible controller and multiple inventory sources, it may be useful to set the vars in the environment configuration from the playbook.
+
+It can also be combined with the group_vars.
+
+Example:
+```yaml
+---
+- hosts: all
+  gather_facts: false
+  environment:
+    BASTION_USER: "{{ bastion_user }}"
+    BASTION_HOST: "{{ bastion_host }}"
+    BASTION_PORT: "{{ bastion_port }}"
+  tasks:
+  ...
+```
+
+here, each host may have its bastion_X vars defined in group_vars and host_vars.
+
+If environement vars are not defined, or if the module does not send them, then the sshwrapper is doing a lookup on the ansible-inventory to fetch the bastion_X vars.
+
+## Using multiple inventories sources
+
+The wrapper is going to lookup the ansible inventory to look for the host and its vars.
+
+You may define multiple inventories sources in an ENV var. Example: 
+
+export BASTION_ANSIBLE_INV_OPTIONS='-i my_first_inventory_source -i my_second_inventory_source'
+
 ## Configuration via ansible.cfg
 
 ```ini
@@ -108,3 +139,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
