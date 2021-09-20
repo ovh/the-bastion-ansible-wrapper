@@ -35,7 +35,11 @@ def get_inventory():
     inventory_cmd = find_executable("ansible-inventory")
     if not inventory_cmd:
         raise Exception("Failed to identify path of ansible-inventory")
-    command = "{} --list".format(inventory_cmd)
+
+    # ex : export BASTION_ANSIBLE_INV_OPTIONS="-i my_inventory -i my_second_inventory"
+    inventory_options = os.environ.get("BASTION_ANSIBLE_INV_OPTIONS", "")
+
+    command = "{} {} --list".format(inventory_cmd, inventory_options)
     p = subprocess.Popen(
         command,
         shell=True,
@@ -71,3 +75,4 @@ def get_hostvars(ipaddr):
         ][0]
     except IndexError:  # ipaddr not found in inventory, should never happen as this is called by ansible
         return {}
+
