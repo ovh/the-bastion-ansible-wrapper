@@ -46,7 +46,16 @@ group_vars/zone_secure.yml:bastion_port: 222
 group_vars/zone_secure.yml:bastion_host: <your-supersecure-bastion>
 ```
 
-For more information have a look at [the official documentation](https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html)
+For more information have a look at [the official documentation](https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html).
+
+## Ansible inventory cache
+
+Because `ansible-inventory` command can be slow, the Ansible inventory results can be saved to a file to speed up
+multiple calls with the following environment variables:
+* `BASTION_ANSIBLE_INV_CACHE_FILE`: path to the cache file on the filesystem
+* `BASTION_ANSIBLE_INV_CACHE_TIMEOUT`: number of seconds before refreshing the cache
+
+If not set, the cache will not be used, even if `cache` is set at the Ansible level.
 
 ## Using env vars from a playbook
 
@@ -75,7 +84,7 @@ If environement vars are not defined, or if the module does not send them, then 
 
 The wrapper is going to lookup the ansible inventory to look for the host and its vars.
 
-You may define multiple inventories sources in an ENV var. Example: 
+You may define multiple inventories sources in an ENV var. Example:
 
 export BASTION_ANSIBLE_INV_OPTIONS='-i my_first_inventory_source -i my_second_inventory_source'
 
@@ -139,4 +148,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-

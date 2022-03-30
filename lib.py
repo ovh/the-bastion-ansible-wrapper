@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 
 
 def find_executable(executable, path=None):
@@ -34,6 +35,21 @@ def get_inventory():
     if not inventory_cmd:
         raise Exception("Failed to identify path of ansible-inventory")
 
+    inventory = None
+
+    # read and invalidate the inventory cache file
+    cache_file = os.environ.get("BASTION_ANSIBLE_INV_CACHE_FILE")
+    if cache_file:
+        cache = get_inventory_from_cache(
+            cache_file=cache_file,
+            cache_timeout=int(os.environ.get("BASTION_ANSIBLE_INV_CACHE_TIMEOUT", 60)),
+        )
+        if cache:
+            inventory = cache.get("inventory")
+
+    if inventory:
+        return inventory
+
     # ex : export BASTION_ANSIBLE_INV_OPTIONS="-i my_inventory -i my_second_inventory"
     inventory_options = os.environ.get("BASTION_ANSIBLE_INV_OPTIONS", "")
 
@@ -49,10 +65,40 @@ def get_inventory():
     if type(output) is bytes:
         output = output.decode()
     if not p.returncode:
-        return json.loads(output)
+        inventory = json.loads(output)
+        if cache_file:
+            write_inventory_to_cache(cache_file=cache_file, inventory=inventory)
+        return inventory
     else:
         logging.error(error)
         raise Exception("failed to query ansible-inventory")
+
+
+def get_inventory_from_cache(cache_file, cache_timeout):
+    """Read ansible-inventory from cache file
+
+    :return: Inventory cache with `updated_at` (to expire the cache) and
+        `inventory` (results of `ansible-inventory` command) keys.
+    :rtype: dict
+    """
+    cache = None
+
+    if os.path.isfile(cache_file):
+        with open(cache_file, "r") as fd:
+            cache = json.load(fd)
+        # cache invalidation
+        if cache.get("updated_at", 0) < int(time.time()) - cache_timeout:
+            os.remove(cache_file)
+            return None
+
+    return cache
+
+
+def write_inventory_to_cache(cache_file, inventory):
+    """Write inventory with last update time to a cache file"""
+    cache = {"inventory": inventory, "updated_at": int(time.time())}
+    with open(cache_file, "w") as fd:
+        json.dump(cache, fd)
 
 
 def get_hostvars(host):
