@@ -57,22 +57,19 @@ def get_inventory():
         raise Exception("failed to query ansible-inventory")
 
 
-def get_hostvars(ipaddr):
-    """Fetch hostvars for the given ipaddr
+def get_hostvars(host):
+    """Fetch hostvars for the given host
 
-    As ansible-inventory use fqdn and not ipaddr we must fetch all inventory and
-    browse it to select the correct variables
+    Ansible either uses the "ansible_host" inventory variable or the hostname.
+    Fetch inventory and browse all hostvars to return only the ones for the host.
 
     :return: hostvars
     :rtype: dict
     """
-    try:
-        inventory = get_inventory()
-        return [
-            v
-            for v in inventory.get("_meta", {}).get("hostvars", {}).values()
-            if v.get("ansible_host") == ipaddr
-        ][0]
-    except IndexError:  # ipaddr not found in inventory, should never happen as this is called by ansible
-        return {}
-
+    inventory = get_inventory()
+    all_hostvars = inventory.get("_meta", {}).get("hostvars", {})
+    for inventory_host, hostvars in all_hostvars.items():
+        if inventory_host == host or hostvars.get("ansible_host") == host:
+            return hostvars
+    # Host not found
+    return {}
