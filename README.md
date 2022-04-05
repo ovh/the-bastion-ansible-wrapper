@@ -55,6 +55,8 @@ multiple calls with the following environment variables:
 * `BASTION_ANSIBLE_INV_CACHE_FILE`: path to the cache file on the filesystem
 * `BASTION_ANSIBLE_INV_CACHE_TIMEOUT`: number of seconds before refreshing the cache
 
+Note: the cache file will not be removed by the wrapper at the end of the run, which means that multiple consecutive runs might use it, as long as it's fresh enough (the expiration of `BASTION_ANSIBLE_INV_CACHE_TIMEOUT` will force a refresh).
+
 If not set, the cache will not be used, even if `cache` is set at the Ansible level.
 
 ## Using env vars from a playbook
