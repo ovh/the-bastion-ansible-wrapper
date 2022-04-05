@@ -31,11 +31,11 @@ def main():
     #
     # will result as : ... '/bin/sh -c '"'"'BASTION_USER=my_bastion_user BASTION_HOST=my_bastion_host BASTION_PORT=22 /usr/bin/python3 && sleep 0'"'"''
     for i in list(cmd.split(" ")):
-        if 'bastion_user' in i.lower():
+        if "bastion_user" in i.lower():
             bastion_user = i.split("=")[1]
-        elif 'bastion_host' in i.lower():
+        elif "bastion_host" in i.lower():
             bastion_host = i.split("=")[1]
-        elif 'bastion_port' in i.lower():
+        elif "bastion_port" in i.lower():
             bastion_port = i.split("=")[1]
 
     # lookup on the inventory may take some time, depending on the source, so use it only if not defined elsewhere
@@ -94,4 +94,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
