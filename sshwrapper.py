@@ -4,7 +4,7 @@ import getpass
 import os
 import sys
 
-from lib import find_executable, get_hostvars
+from lib import find_executable, get_hostvars, manage_conf_file
 
 
 def main():
@@ -15,6 +15,7 @@ def main():
     bastion_port = None
     remote_user = None
     remote_port = 22
+    default_configuration_file = "/etc/ovh/bastion/config.yml"
 
     cmd = argv.pop()
     host = argv.pop()
@@ -37,6 +38,11 @@ def main():
             bastion_host = i.split("=")[1]
         elif "bastion_port" in i.lower():
             bastion_port = i.split("=")[1]
+
+    # in some cases (AWX in a non containerised environment for instance), the environment is override by the job
+    # so we are not able to get the BASTION vars
+    # if some vars are still undefined, try to load them from a configuration file
+    bastion_host, bastion_port, bastion_user = manage_conf_file(os.environ.get("BASTION_CONF_FILE", default_configuration_file), bastion_host, bastion_port, bastion_user)
 
     # lookup on the inventory may take some time, depending on the source, so use it only if not defined elsewhere
     # it seems like some module like template does not send env vars too...

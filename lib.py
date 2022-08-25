@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import time
+from yaml import safe_load, YAMLError
 
 
 def find_executable(executable, path=None):
@@ -117,3 +118,28 @@ def get_hostvars(host):
             return hostvars
     # Host not found
     return {}
+
+
+def manage_conf_file(conf_file, bastion_host, bastion_port, bastion_user):
+    """Fetch the bastion vars from a config file.
+    
+        There will be set if not already defined, and before looking in the ansible inventory
+    
+    """
+
+    if os.path.exists(conf_file):
+        try:
+            with open(conf_file, "r") as f:
+                yaml_conf = safe_load(f)
+
+                if not bastion_host:
+                    bastion_host = yaml_conf.get("bastion_host")
+                if not bastion_port:
+                    bastion_port = yaml_conf.get("bastion_port")
+                if not bastion_user:
+                    bastion_user = yaml_conf.get("bastion_user")
+
+        except (YAMLError, IOError) as e:
+            print("Error loading yaml file: {}".format(e))
+
+    return bastion_host, bastion_port, bastion_user

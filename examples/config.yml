@@ -1,0 +1,4 @@
+---
+bastion_host: "my_great_bastion"
+bastion_port: 22
+bastion_user: "my_bastion_user"
