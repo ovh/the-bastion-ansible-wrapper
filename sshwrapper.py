@@ -70,12 +70,13 @@ def main():
             "-l",
             bastion_user,
             bastion_host,
-            "-t",
+            "-T",
         ]
         + argv
         + [
             "--",
             "-q",
+            "-T",
             "--never-escape",
             "--user",
             remote_user,
