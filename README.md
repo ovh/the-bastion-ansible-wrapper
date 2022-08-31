@@ -83,7 +83,7 @@ here, each host may have its bastion_X vars defined in group_vars and host_vars.
 If environement vars are not defined, or if the module does not send them, then the sshwrapper is doing a lookup on the ansible-inventory to fetch the bastion_X vars.
 
 ## Using vars from a config file
-For some use cases (AWX in a non containerised environment for instance), the environment is override by the job, and there is no fixed inventory source path.
+For some use cases (AWX in a non containerised environment for instance), the environment is overridden by the job, and there is no fixed inventory source path.
 
 So we may not get the vars from the environment nor the inventory.
 

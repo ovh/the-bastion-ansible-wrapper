@@ -39,7 +39,7 @@ def main():
         elif "bastion_port" in i.lower():
             bastion_port = i.split("=")[1]
 
-    # in some cases (AWX in a non containerised environment for instance), the environment is override by the job
+    # in some cases (AWX in a non containerised environment for instance), the environment is overridden by the job
     # so we are not able to get the BASTION vars
     # if some vars are still undefined, try to load them from a configuration file
     bastion_host, bastion_port, bastion_user = manage_conf_file(os.environ.get("BASTION_CONF_FILE", default_configuration_file), bastion_host, bastion_port, bastion_user)
