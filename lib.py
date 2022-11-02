@@ -82,17 +82,28 @@ def get_inventory_from_cache(cache_file, cache_timeout):
         `inventory` (results of `ansible-inventory` command) keys.
     :rtype: dict
     """
-    cache = None
-
-    if os.path.isfile(cache_file):
+    try:
+        # Load JSON from cache file
         with open(cache_file, "r") as fd:
             cache = json.load(fd)
-        # cache invalidation
-        if cache.get("updated_at", 0) < int(time.time()) - cache_timeout:
-            os.remove(cache_file)
-            return None
+    except IOError:
+        # File does not exist or path is incorrect
+        return None
+    except:
+        # Invalid JSON or any other error
+        pass
+    else:
+        # Check cache expiry
+        if cache.get("updated_at", 0) >= int(time.time()) - cache_timeout:
+            return cache
 
-    return cache
+    # Cache expired or any other error
+    try:
+        os.remove(cache_file)
+    except:
+        pass
+
+    return None
 
 
 def write_inventory_to_cache(cache_file, inventory):
