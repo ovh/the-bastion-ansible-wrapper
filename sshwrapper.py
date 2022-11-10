@@ -4,7 +4,7 @@ import getpass
 import os
 import sys
 
-from lib import find_executable, get_hostvars, manage_conf_file
+from lib import find_executable, get_hostvars, get_var_within, manage_conf_file
 
 
 def main():
@@ -54,11 +54,18 @@ def main():
     if not bastion_host or not bastion_port or not bastion_user:
         hostvar = get_hostvars(host)  # dict
 
-        bastion_port = hostvar.get("bastion_port", os.environ.get("BASTION_PORT", 22))
-        bastion_user = hostvar.get(
-            "bastion_user", os.environ.get("BASTION_USER", getpass.getuser())
+        bastion_port = get_var_within(
+            hostvar.get("bastion_port", os.environ.get("BASTION_PORT", 22)), hostvar
         )
-        bastion_host = hostvar.get("bastion_host", os.environ.get("BASTION_HOST"))
+        bastion_user = get_var_within(
+            hostvar.get(
+                "bastion_user", os.environ.get("BASTION_USER", getpass.getuser())
+            ),
+            hostvar,
+        )
+        bastion_host = get_var_within(
+            hostvar.get("bastion_host", os.environ.get("BASTION_HOST")), hostvar
+        )
 
     for i, e in enumerate(argv):
 
