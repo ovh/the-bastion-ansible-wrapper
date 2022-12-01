@@ -155,3 +155,36 @@ def manage_conf_file(conf_file, bastion_host, bastion_port, bastion_user):
             print("Error loading yaml file: {}".format(e))
 
     return bastion_host, bastion_port, bastion_user
+
+
+def get_var_within(my_value, hostvar, check_list=None):
+    """If a value is a jinja2 var, try to resolve it in the hostvars
+
+    Ex:
+        "my_value" == {{ my_jinja2_var }}
+        "my_jinja2_var" == "foo"
+
+    Will return "foo" for "my_value"
+
+    """
+    # keep track of parsed values
+    # we want to avoid:
+    # bastion_host == {{ foo }}
+    # foo == {{ bastion_host }}
+    if check_list is None:
+        check_list = []
+
+    if my_value.startswith("{{") and my_value.endswith("}}"):
+        # ex: {{ my_jinja2_var }} -> lookup for 'my_jinja2_var' in hostvars
+        key_name = my_value.replace("{{", "").replace("}}", "").strip()
+
+        if key_name not in check_list:
+            check_list.append(key_name)
+            # resolve intricated vars
+            return get_var_within(
+                hostvar.get(key_name, ""), hostvar, check_list=check_list
+            )
+        else:
+            return ""
+
+    return my_value
