@@ -92,7 +92,7 @@ In this case, we may use a configuration file to provide the BASTION vars.
 Example:
 
 ```
-cat /etc/ovh/bastion_wrapper_conf.yml
+cat /etc/ovh/bastion/config.yml
 
 ---
 bastion_host: "my_great_bastion"
@@ -101,6 +101,14 @@ bastion_user: "my_bastion_user"
 ```
 
 The configuration file is read after checking the environment variables sent in the ssh command line, and will only set them if not defined.
+
+## Configuration priority
+
+Source of variables are read in the following order:
+* Ansible playbook `environment`
+* configuration file
+* Ansible inventory
+* operating system environment variables
 
 ## Using multiple inventories sources
 
