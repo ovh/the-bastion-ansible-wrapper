@@ -174,7 +174,11 @@ def get_var_within(my_value, hostvar, check_list=None):
     if check_list is None:
         check_list = []
 
-    if my_value.startswith("{{") and my_value.endswith("}}"):
+    if (
+        isinstance(my_value, str)
+        and my_value.startswith("{{")
+        and my_value.endswith("}}")
+    ):
         # ex: {{ my_jinja2_var }} -> lookup for 'my_jinja2_var' in hostvars
         key_name = my_value.replace("{{", "").replace("}}", "").strip()
 

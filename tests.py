@@ -89,3 +89,9 @@ def test_get_var_not_a_jinja2_var():
     hostvars = {"bastion_host": "{{ bastion_fqdn"}
     bastion_host = get_var_within(hostvars["bastion_host"], hostvars)
     assert bastion_host == hostvars["bastion_host"]
+
+
+def test_get_var_not_a_string():
+    hostvars = {"bastion_host": 68}
+    bastion_host = get_var_within(hostvars["bastion_host"], hostvars)
+    assert bastion_host == hostvars["bastion_host"]
