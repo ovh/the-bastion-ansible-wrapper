@@ -1,2 +1,2 @@
 #!/bin/sh
-exec scp -S $(dirname $0)/scpwrapper.py "$@"
+exec scp -O -S $(dirname $0)/scpwrapper.py "$@"
