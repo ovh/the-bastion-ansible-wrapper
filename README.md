@@ -83,6 +83,7 @@ here, each host may have its bastion_X vars defined in group_vars and host_vars.
 If environement vars are not defined, or if the module does not send them, then the sshwrapper is doing a lookup on the ansible-inventory to fetch the bastion_X vars.
 
 ## Using vars from a config file
+
 For some use cases (AWX in a non containerised environment for instance), the environment is overridden by the job, and there is no fixed inventory source path.
 
 So we may not get the vars from the environment nor the inventory.
@@ -102,6 +103,9 @@ bastion_user: "my_bastion_user"
 
 The configuration file is read after checking the environment variables sent in the ssh command line, and will only set them if not defined.
 
+The location of the configuration file can be set with `BASTION_CONFIG_FILE`
+environment variable (defaults to `/etc/ovh/bastion/config.yml`).
+
 ## Configuration priority
 
 Source of variables are read in the following order:
@@ -116,7 +120,9 @@ The wrapper is going to lookup the ansible inventory to look for the host and it
 
 You may define multiple inventories sources in an ENV var. Example:
 
+```
 export BASTION_ANSIBLE_INV_OPTIONS='-i my_first_inventory_source -i my_second_inventory_source'
+```
 
 ## Connection via SSH
 
