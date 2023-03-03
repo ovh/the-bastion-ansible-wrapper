@@ -118,16 +118,63 @@ You may define multiple inventories sources in an ENV var. Example:
 
 export BASTION_ANSIBLE_INV_OPTIONS='-i my_first_inventory_source -i my_second_inventory_source'
 
-## Configuration via ansible.cfg
+## Connection via SSH
+
+The wrapper can be configured using `ansible.cfg` file as follow:
 
 ```ini
 [ssh_connection]
-scp_if_ssh = True
-# Rely on bastion wrapper
 pipelining = True
 ssh_executable = ./extra/bastion/sshwrapper.py
+```
+
+Or by using the `ANSIBLE_SSH_PIPELINING` and `ANSIBLE_SSH_EXECUTABLE`
+environment variables.
+
+## File transfer using SFTP
+
+By default, Ansible uses SFTP to copy files. The executable should be defined
+as follow in the ansible.cfg file:
+
+```ini
+[ssh_connection]
+transfer_method = sftp
+sftp_executable = ./extra/bastion/sftpbastion.sh
+```
+
+Or by using the `ANSIBLE_SFTP_EXECUTABLE` environment variable.
+
+## File transfer using SCP (deprecated)
+
+The SCP protocol is still allowed but will soon deprecated by OpenSSH. You
+should consider using SFTP instead. If you still want to use the SCP protocol,
+you can define the method and executable as follow:
+
+File ansible.cfg:
+
+```ini
+[ssh_connection]
+transfer_method = scp
+scp_if_ssh = True       # Ansible < 2.17
+scp_extra_args = -O     # OpenSSH >= 9.0
 scp_executable = ./extra/bastion/scpbastion.sh
-transfer_method =  scp
+```
+
+Or by using the following environment variables:
+* `ANSIBLE_SCP_IF_SSH`
+* `ANSIBLE_SSH_TRANSFER_METHOD`
+* `ANSIBLE_SCP_EXTRA_ARGS`
+* `ANSIBLE_SCP_EXECUTABLE`
+
+## Configuration example
+
+File ansible.cfg:
+
+```ini
+[ssh_connection]
+pipelining = True
+ssh_executable = ./extra/bastion/sshwrapper.py
+sftp_executable = ./extra/bastion/sftpbastion.sh
 ```
 
 ## Integration via submodule
