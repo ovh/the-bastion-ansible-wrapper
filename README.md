@@ -124,6 +124,26 @@ You may define multiple inventories sources in an ENV var. Example:
 export BASTION_ANSIBLE_INV_OPTIONS='-i my_first_inventory_source -i my_second_inventory_source'
 ```
 
+## Using the bastion wrapper with AWX
+
+When using AWX, the inventory is available as a file in the AWX Execution Environment.
+It is then easy and much faster to get the appropriate host from the IP sent by Ansible to the bastion wrapper.
+
+When AWX usage is detected, the bastion wrapper is going to:
+- lookup in the inventory file for the appropriate host
+- lookup for the bastion vars in the host_vars
+- if not found, run an inventory lookup on the host to get the group_vars too (and execute eventual vars plugins)
+
+The AWX usage is detected by looking for the inventory file, the default path being "/runner/inventory/hosts"
+The path may be changed y setting an "AWX_RUN_DIR" environment variable on the AWX worker.
+Ex on a AWX k8s instance group:
+```
+      env:
+      - name: "AWX_RUN_DIR"
+        value: "/my_folder/my_sub_folder"
+```
+The inventory file will be looked up at "/my_folder/my_sub_folder/inventory/hosts"
+
 ## Connection via SSH
 
 The wrapper can be configured using `ansible.cfg` file as follow:

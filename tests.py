@@ -1,6 +1,13 @@
+import os
+
 from yaml import dump
 
-from lib import get_var_within, manage_conf_file
+from lib import (
+    awx_get_inventory_file,
+    get_bastion_vars,
+    get_var_within,
+    manage_conf_file,
+)
 
 BASTION_HOST = "my_bastion"
 BASTION_PORT = 22
@@ -95,3 +102,34 @@ def test_get_var_not_a_string():
     hostvars = {"bastion_host": 68}
     bastion_host = get_var_within(hostvars["bastion_host"], hostvars)
     assert bastion_host == hostvars["bastion_host"]
+
+
+def test_awx_get_inventory_file_default():
+    assert awx_get_inventory_file() == "/runner/inventory/hosts"
+
+
+def test_awx_get_inventory_file_env_defined():
+    env_path = "/my_awx"
+    os.environ["AWX_RUN_DIR"] = env_path
+    assert awx_get_inventory_file() == f"{env_path}/inventory/hosts"
+    os.environ.pop("AWX_RUN_DIR")
+
+
+def test_get_bastion_vars():
+    host_vars = {
+        "bastion_port": BASTION_PORT,
+        "bastion_host": BASTION_HOST,
+        "bastion_user": BASTION_USER,
+    }
+    bastion_vars = get_bastion_vars(host_vars)
+    assert (
+        bastion_vars["bastion_port"] == BASTION_PORT
+        and bastion_vars["bastion_host"] == BASTION_HOST
+        and bastion_vars["bastion_user"] == BASTION_USER
+    )
+
+
+def test_get_bastion_vars_not_full():
+    host_vars = {"bastion_port": BASTION_PORT, "bastion_user": BASTION_USER}
+    bastion_vars = get_bastion_vars(host_vars)
+    assert not bastion_vars["bastion_host"]

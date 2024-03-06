@@ -4,7 +4,14 @@ import getpass
 import os
 import sys
 
-from lib import find_executable, get_hostvars, get_var_within, manage_conf_file
+from lib import (
+    awx_get_inventory_file,
+    awx_get_vars,
+    find_executable,
+    get_hostvars,
+    get_var_within,
+    manage_conf_file,
+)
 
 
 def main():
@@ -52,8 +59,16 @@ def main():
     # lookup on the inventory may take some time, depending on the source, so use it only if not defined elsewhere
     # it seems like some module like template does not send env vars too...
     if not bastion_host or not bastion_port or not bastion_user:
-        hostvar = get_hostvars(host)  # dict
 
+        # check if running on AWX, we'll get the vars in a different way
+        awx_inventory_file = awx_get_inventory_file()
+        if os.path.exists(awx_inventory_file):
+            hostvar = awx_get_vars(host, awx_inventory_file)
+        else:
+            hostvar = get_hostvars(host)  # dict
+
+        # manage the case where a bastion var is defined from another var
+        # Ex: bastion_host = {{ my_bastion_host }}
         bastion_port = get_var_within(
             hostvar.get("bastion_port", os.environ.get("BASTION_PORT", 22)), hostvar
         )
