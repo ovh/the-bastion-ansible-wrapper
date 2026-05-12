@@ -1,10 +1,72 @@
 import json
 import logging
 import os
+import shlex
 import subprocess
 import time
 
 from yaml import YAMLError, safe_load
+
+
+# ssh(1) single-letter flags that take a separate argument; used by
+# parse_ssh_argv to skip option arguments cleanly and locate the host.
+_SSH_FLAGS_WITH_ARG = set("BbcDEeFIiJLlmOopQRSWw")
+
+
+def parse_ssh_argv(argv):
+    """Split argv with ssh(1) semantics into (argv, host, cmd_parts).
+
+    Option parsing stops at the first non-option positional (the host); the
+    remainder is the remote command. The standard Ansible ssh plugin emits a
+    single command element, but other connection plugins (e.g. Mitogen) emit
+    multiple elements (``python``, ``-c``, ``<code>``, ...); both are handled.
+
+    :param argv: ssh-style argv (excluding argv[0])
+    :return: (options, host, cmd_parts); host is None if argv has no positional
+    :rtype: tuple[list, str | None, list]
+    """
+    options = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--":
+            options.append(a)
+            if i + 1 < len(argv):
+                return options, argv[i + 1], argv[i + 2:]
+            return options, None, []
+        if a.startswith("-") and len(a) > 1:
+            flag = a[1]
+            if len(a) == 2 and flag in _SSH_FLAGS_WITH_ARG:
+                options.append(a)
+                if i + 1 < len(argv):
+                    options.append(argv[i + 1])
+                    i += 2
+                else:
+                    i += 1
+            else:
+                options.append(a)
+                i += 1
+        else:
+            return options, a, argv[i + 1:]
+    return options, None, []
+
+
+def shell_wrap_command(cmd_parts):
+    """Normalize a list of remote-command argv elements into a single shell
+    command string. Wraps the command in ``/bin/sh -c '<...>'`` (using
+    :func:`shlex.quote` for safe quoting) unless the input is already a
+    ``/bin/sh`` invocation (the standard Ansible ssh plugin sends one).
+
+    :param cmd_parts: list of argv elements making up the remote command
+    :return: a single command string safe to pass through to ssh/the bastion
+    :rtype: str
+    """
+    if not cmd_parts:
+        return ""
+    joined = " ".join(cmd_parts)
+    if joined.startswith("/bin/sh"):
+        return joined
+    return "/bin/sh -c {}".format(shlex.quote(joined))
 
 
 def find_executable(executable, path=None):
