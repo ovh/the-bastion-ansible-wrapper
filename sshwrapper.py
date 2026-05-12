@@ -11,12 +11,12 @@ from lib import (
     get_hostvars,
     get_var_within,
     manage_conf_file,
+    parse_ssh_argv,
+    shell_wrap_command,
 )
 
 
 def main():
-    argv = list(sys.argv[1:])  # Copy
-
     bastion_user = None
     bastion_host = None
     bastion_port = None
@@ -24,8 +24,16 @@ def main():
     remote_port = 22
     default_configuration_file = "/etc/ovh/bastion/config.yml"
 
-    cmd = argv.pop()
-    host = argv.pop()
+    argv, host, remote_commands_parts = parse_ssh_argv(sys.argv[1:])
+    if host is None:
+        sys.stderr.write("sshwrapper: no host found in argv\n")
+        sys.exit(1)
+
+    # Normalize the remote command into a single shell-safe string. The
+    # standard Ansible ssh plugin already emits one ``/bin/sh -c '...'``
+    # element; Mitogen emits several (``python``, ``-c``, ``<code>``, ...)
+    # that we wrap via /bin/sh -c with proper shell-quoting.
+    remote_commands = shell_wrap_command(remote_commands_parts)
 
     # check if bastion_vars are passed as env vars in the playbook
     # may be usefull if the ansible controller manage many bastions
@@ -38,7 +46,7 @@ def main():
     #     BASTION_PORT: "{{ bastion_port }}"
     #
     # will result as : ... '/bin/sh -c '"'"'BASTION_USER=my_bastion_user BASTION_HOST=my_bastion_host BASTION_PORT=22 /usr/bin/python3 && sleep 0'"'"''
-    for i in list(cmd.split(" ")):
+    for i in list(remote_commands.split(" ")):
         if "bastion_user" in i.lower():
             bastion_user = i.split("=")[1]
         elif "bastion_host" in i.lower():
@@ -83,14 +91,33 @@ def main():
             hostvar.get("bastion_host", os.environ.get("BASTION_HOST")), hostvar
         )
 
-    for i, e in enumerate(argv):
-
-        if e.startswith("User="):
+    # Extract the remote user/port from the parsed options and rewrite those
+    # flags to point at the bastion so the outer ``ssh`` connects there; the
+    # original target values are forwarded to the bastion via ``--user`` /
+    # ``--port`` below. Handles both Ansible's standard ssh plugin format
+    # (``-o User=X`` / ``-o Port=X``) and the short form used by other plugins
+    # (``-l X`` / ``-p X``, e.g. Mitogen).
+    i = 0
+    while i < len(argv):
+        e = argv[i]
+        if e == "-l" and i + 1 < len(argv):
+            remote_user = argv[i + 1]
+            argv[i + 1] = bastion_user
+            i += 2
+        elif e == "-p" and i + 1 < len(argv):
+            remote_port = argv[i + 1]
+            argv[i + 1] = bastion_port
+            i += 2
+        elif e.startswith("User="):
             remote_user = e.split("=")[-1]
             argv[i] = "User={}".format(bastion_user)
+            i += 1
         elif e.startswith("Port="):
             remote_port = e.split("=")[-1]
             argv[i] = "Port={}".format(bastion_port)
+            i += 1
+        else:
+            i += 1
 
     # syscall exec
     args = (
@@ -118,7 +145,7 @@ def main():
             remote_port,
             host,
             "--",
-            cmd,
+            remote_commands,
         ]
     )
     os.execv(
