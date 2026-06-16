@@ -1,3 +1,4 @@
+import fcntl
 import json
 import logging
 import os
@@ -37,30 +38,36 @@ def get_inventory():
     if not inventory_cmd:
         raise Exception("Failed to identify path of ansible-inventory")
 
-    inventory = None
-
-    # read and invalidate the inventory cache file
     cache_file = os.environ.get("BASTION_ANSIBLE_INV_CACHE_FILE")
-    if cache_file:
-        cache = get_inventory_from_cache(
-            cache_file=cache_file,
-            cache_timeout=int(os.environ.get("BASTION_ANSIBLE_INV_CACHE_TIMEOUT", 60)),
-        )
-        if cache:
-            inventory = cache.get("inventory")
-
-    if inventory:
-        return inventory
-
-    # ex : export BASTION_ANSIBLE_INV_OPTIONS="-i my_inventory -i my_second_inventory"
+    cache_timeout = int(os.environ.get("BASTION_ANSIBLE_INV_CACHE_TIMEOUT", 60))
     inventory_options = os.environ.get("BASTION_ANSIBLE_INV_OPTIONS", "")
-
     command = "{} {} --list".format(inventory_cmd, inventory_options)
-    inventory = get_inv_from_command(command)
-    if cache_file:
-        write_inventory_to_cache(cache_file=cache_file, inventory=inventory)
 
-    return inventory
+    if not cache_file:
+        return get_inv_from_command(command)
+
+    # return from cache without acquiring a lock if cache exists and is not expired
+    cache = get_inventory_from_cache(cache_file=cache_file, cache_timeout=cache_timeout)
+    if cache:
+        return cache.get("inventory")
+
+    # acquire an exclusive lock so only one process runs ansible-inventory
+    lock_file = cache_file + ".lock"
+    with open(lock_file, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            # Re-check cache after acquiring lock; another process may have populated it
+            cache = get_inventory_from_cache(
+                cache_file=cache_file, cache_timeout=cache_timeout
+            )
+            if cache:
+                return cache.get("inventory")
+
+            inventory = get_inv_from_command(command)
+            write_inventory_to_cache(cache_file=cache_file, inventory=inventory)
+            return inventory
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 
 def get_inventory_from_cache(cache_file, cache_timeout):
