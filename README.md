@@ -157,6 +157,16 @@ ssh_executable = ./extra/bastion/sshwrapper.py
 Or by using the `ANSIBLE_SSH_PIPELINING` and `ANSIBLE_SSH_EXECUTABLE`
 environment variables.
 
+Ansible passes these executables to the system as-is, without any path
+expansion, so a relative path is resolved from the directory you run Ansible
+in and not from the directory holding `ansible.cfg`. The examples in this
+document assume you run Ansible from the root of a playbook repository where
+this project is checked out as `extra/bastion`, as described in [Integration
+via submodule](#integration-via-submodule). Use an absolute path in any other
+case, in particular for a system-wide `/etc/ansible/ansible.cfg`. See the
+[`ssh_executable`](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/ssh_connection.html#parameter-ssh_executable)
+parameter of the `ansible.builtin.ssh` connection plugin.
+
 ## File transfer using SFTP
 
 By default, Ansible uses SFTP to copy files. The executable should be defined
