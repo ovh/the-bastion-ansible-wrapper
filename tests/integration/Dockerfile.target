@@ -1,0 +1,10 @@
+FROM debian:13-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-client openssh-server python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --shell /bin/bash deploy \
+    && mkdir -p /run/sshd \
+    && ssh-keygen -A
+
+CMD ["/usr/sbin/sshd", "-D", "-e"]

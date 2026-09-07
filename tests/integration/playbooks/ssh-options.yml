@@ -1,0 +1,51 @@
+---
+# The bastion vars are known only at runtime and reach the wrappers through the
+# ssh options ansible renders per host, the only channel an sftp subsystem
+# invocation carries and the only one ansible's own temporary directory command
+# carries too. Issue #30.
+- hosts: all
+  gather_facts: false
+  vars:
+    payload: the bastion ansible wrapper carries runtime vars
+    remote_path: "/tmp/bastion_ssh_options-{{ transfer }}.txt"
+  tasks:
+    - name: compute the bastion vars at runtime
+      set_fact:
+        runtime_bastion_user: "{{ seed_user }}"
+        runtime_bastion_host: "{{ seed_host }}"
+        runtime_bastion_port: "{{ seed_port }}"
+
+    - name: hand the bastion vars over to the wrappers
+      set_fact:
+        ansible_ssh_common_args: >-
+          -o BastionUser={{ runtime_bastion_user }}
+          -o BastionHost={{ runtime_bastion_host }}
+          -o BastionPort={{ runtime_bastion_port }}
+
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that: command_output.stdout == "alive"
+
+    - name: upload a file through the bastion
+      copy:
+        content: "{{ payload }}\n"
+        dest: "{{ remote_path }}"
+      register: upload
+
+    - name: check the upload happened
+      assert:
+        that: upload is changed
+
+    - name: download it back through the bastion
+      fetch:
+        src: "{{ remote_path }}"
+        dest: "{{ fetch_dir }}/"
+        flat: true
+
+    - name: check the round trip
+      assert:
+        that: lookup('file', fetch_dir ~ '/' ~ remote_path | basename) == payload

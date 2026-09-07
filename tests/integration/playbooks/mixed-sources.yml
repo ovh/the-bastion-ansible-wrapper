@@ -1,0 +1,14 @@
+---
+# The configuration file holds the bastion host and port, the inventory holds
+# the bastion user, and the lookup made for the user has to leave the other two
+# alone.
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that: command_output.stdout == "alive"

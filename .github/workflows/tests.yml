@@ -1,0 +1,42 @@
+---
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# a merge can break what two green pull requests could not
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pytest -v tests.py
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+      # the wrappers import yaml, which ansible-core only pulls in as a
+      # dependency of its own
+      - run: pip install -r requirements.txt -r tests/integration/requirements.txt
+      - run: tests/integration/run.sh

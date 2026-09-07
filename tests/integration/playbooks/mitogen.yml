@@ -1,0 +1,29 @@
+---
+# Mitogen replaces the ssh connection plugin and builds its own ssh command
+# line, whose first stage reaches the wrapper as several argv elements rather
+# than as the single quoted command the stock plugin hands over. The raw module
+# is the other shape the stock path never produces.
+- hosts: all
+  tasks:
+    - name: run a raw command through the bastion
+      raw: echo "raw alive $(id -un)"
+      register: raw_output
+
+    - name: check the raw command ran on the target
+      assert:
+        that:
+          - raw_output.stdout is search("raw alive " ~ target_user)
+
+    - name: run a module through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the module ran on the target
+      assert:
+        that:
+          - command_output.stdout == "alive"
+
+    - name: check the connection was the target's own
+      assert:
+        that:
+          - ansible_facts.env.USER == target_user
