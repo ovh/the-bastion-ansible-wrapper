@@ -1,0 +1,19 @@
+---
+# The bastion vars only reach the wrapper inlined in the remote command, which
+# is how AWX jobs pass them. BASTION_ANSIBLE_INV_OPTIONS holds a path matching a
+# bastion var name, the shape that used to crash the wrapper before parsing.
+- hosts: all
+  gather_facts: false
+  environment:
+    BASTION_USER: "{{ bastion_user }}"
+    BASTION_HOST: "{{ bastion_host }}"
+    BASTION_PORT: "{{ bastion_port }}"
+    BASTION_ANSIBLE_INV_OPTIONS: "-i /etc/ansible/bastion_hosts.yml"
+  tasks:
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that: command_output.stdout == "alive"

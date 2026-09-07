@@ -1,0 +1,14 @@
+---
+# The bastion vars come from the environment of the ansible process, which the
+# wrapper reads last, behind the inventory. Nothing here carries them, an
+# "environment" block would make them travel in the remote command instead.
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that: command_output.stdout == "alive"

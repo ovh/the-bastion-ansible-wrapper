@@ -1,0 +1,32 @@
+---
+# Files travel through the scp or the sftp wrapper, depending on the transfer
+# method ansible is configured with.
+- hosts: all
+  gather_facts: false
+  vars:
+    payload: the bastion ansible wrapper transfers files
+    # the name matches a bastion var name on purpose, the scp wrapper reads the
+    # command it proxies looking for those. one path per transfer method too, an
+    # upload skipped as already done would otherwise pass on the file left by
+    # the other method
+    remote_path: /tmp/bastion_host-{{ transfer }}.txt
+  tasks:
+    - name: upload a file through the bastion
+      copy:
+        content: "{{ payload }}\n"
+        dest: "{{ remote_path }}"
+      register: upload
+
+    - name: check the upload happened
+      assert:
+        that: upload is changed
+
+    - name: download it back through the bastion
+      fetch:
+        src: "{{ remote_path }}"
+        dest: "{{ fetch_dir }}/"
+        flat: true
+
+    - name: check the round trip
+      assert:
+        that: lookup('file', fetch_dir ~ '/' ~ remote_path | basename) == payload

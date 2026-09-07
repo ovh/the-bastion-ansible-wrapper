@@ -9,6 +9,31 @@ pay attention to a few things:
 4. your work must be signed (see below)
 5. you may contribute through GitHub Pull Requests
 
+# Running the tests
+
+Unit tests and integration tests against a bastion docker image run on every
+pull request and on every push to `main`. The unit tests run on the python
+versions of the supported Debian releases, 3.11 for Debian 12 and 3.13 for
+Debian 13, which is also what caps the pinned ansible-core. The integration
+tests run on 3.11, the oldest of the two, which `.python-version` also holds
+for local work.
+
+## Unit tests
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest tests.py
+```
+
+## Integration tests
+
+Requires `docker` in `PATH`.
+
+```bash
+pip install -r requirements.txt -r tests/integration/requirements.txt
+tests/integration/run.sh
+```
+
 # Coding and documentation Style
 
 Given the relatively small size of the project, please refer to the

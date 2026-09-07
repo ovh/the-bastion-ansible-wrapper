@@ -1,0 +1,50 @@
+---
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      python-requirements:
+        patterns:
+          - '*'
+
+  - package-ecosystem: pip
+    directory: /tests/integration
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      ansible:
+        patterns:
+          - '*'
+    ignore:
+      # ansible-core 2.20 and later need python 3.12, Debian 12 ships 3.11
+      - dependency-name: ansible-core
+        versions: ['>=2.20']
+
+  - package-ecosystem: docker
+    directory: /tests/integration
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      docker:
+        patterns:
+          - '*'

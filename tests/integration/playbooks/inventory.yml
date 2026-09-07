@@ -1,0 +1,17 @@
+---
+# The bastion vars come from the inventory, and reset_connection makes ansible
+# run the wrapper without a command to proxy.
+- hosts: all
+  tasks:
+    - name: reset the connection
+      meta: reset_connection
+
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that:
+          - command_output.stdout == "alive"
+          - ansible_facts.env.USER == "deploy"

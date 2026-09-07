@@ -1,0 +1,7 @@
+---
+# No source carries the bastion vars, the wrapper has to report it.
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: run a command through the bastion
+      command: echo alive

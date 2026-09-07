@@ -1,0 +1,13 @@
+---
+# The bastion vars come from BASTION_CONF_FILE, including for the python
+# interpreter discovery ansible runs before the first module.
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: run a command through the bastion
+      command: echo alive
+      register: command_output
+
+    - name: check the command ran on the target
+      assert:
+        that: command_output.stdout == "alive"
